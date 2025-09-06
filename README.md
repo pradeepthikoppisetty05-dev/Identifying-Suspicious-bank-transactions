@@ -1,10 +1,10 @@
-Bank Transaction Fraud Detection
+##Bank Transaction Fraud Detection
 
-Overview
+#Overview
 
 A Flask-based web application to detect suspicious bank transactions in real time using rule-based risk scoring and an interactive dashboard.
 
-Features
+#Features
 
 Real-time risk analysis
 
@@ -14,13 +14,13 @@ Visual dashboard with recent transaction history
 
 Actionable recommendations (Approve, Flag, Block)
 
-Tech Stack
+#Tech Stack
 
 Backend: Flask (Python)
 
 Frontend: HTML, CSS, JavaScript (Chart.js)
 
-Installation
+#Installation
 git clone https://github.com/your-username/bank-fraud-detection.git
 cd bank-fraud-detection
 pip install -r requirements.txt
@@ -29,14 +29,10 @@ python app.py
 
 Open: http://localhost:5000
 
-Future Enhancements
+#Future Enhancements
 
 Machine learning integration
 
 Persistent database storage
 
 Role-based authentication
-
-Contributors
-
-T. Vyuhitha, K. Pradeepthi, K. Shobha, P. Arun Kumar
