@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suspicious Bank Transaction Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 10s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-20px, -20px); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e1e5e9;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result.high-risk {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border-left: 5px solid #dc3545;
+        }
+
+        .result.medium-risk {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            color: #333;
+            border-left: 5px solid #f39c12;
+        }
+
+        .result.low-risk {
+            background: linear-gradient(135deg, #55efc4, #00b894);
+            color: white;
+            border-left: 5px solid #00a085;
+        }
+
+        .probability-bar {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+        }
+
+        .probability-fill {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+            position: relative;
+        }
+
+        .probability-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .transaction-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            padding: 15px;
+            border: 1px solid #e1e5e9;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .transaction-item.suspicious {
+            border-left: 4px solid #dc3545;
+            background: rgba(220, 53, 69, 0.05);
+        }
+
+        .transaction-item.normal {
+            border-left: 4px solid #28a745;
+            background: rgba(40, 167, 69, 0.05);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Bank Transaction Fraud Detection</h1>
+            <p>Advanced AI-powered suspicious transaction detection system</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>🔍 Analyze Transaction</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label for="amount">Transaction Amount ($)</label>
+                        <input type="number" id="amount" name="amount" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="account_balance">Account Balance Before ($)</label>
+                        <input type="number" id="account_balance" name="account_balance" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transaction_type">Transaction Type</label>
+                        <select id="transaction_type" name="transaction_type" required>
+                            <option value="">Select Type</option>
+                            <option value="ATM_WITHDRAWAL">ATM Withdrawal</option>
+                            <option value="ONLINE_PURCHASE">Online Purchase</option>
+                            <option value="TRANSFER">Transfer</option>
+                            <option value="DEPOSIT">Deposit</option>
+                            <option value="BILL_PAYMENT">Bill Payment</option>
+                            <option value="CASH_WITHDRAWAL">Cash Withdrawal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="merchant">Merchant</label>
+                        <select id="merchant" name="merchant" required>
+                            <option value="">Select Merchant</option>
+                            <option value="Amazon">Amazon</option>
+                            <option value="Walmart">Walmart</option>
+                            <option value="Target">Target</option>
+                            <option value="Starbucks">Starbucks</option>
+                            <option value="Shell">Shell</option>
+                            <option value="McDonald's">McDonald's</option>
+                            <option value="Best Buy">Best Buy</option>
+                            <option value="Home Depot">Home Depot</option>
+                            <option value="Costco">Costco</option>
+                            <option value="CVS">CVS</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" name="location" placeholder="Enter city/location" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="hour_of_day">Hour of Day (0-23)</label>
+                        <input type="number" id="hour_of_day" name="hour_of_day" min="0" max="23" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="is_weekend">Weekend Transaction?</label>
+                        <select id="is_weekend" name="is_weekend" required>
+                            <option value="">Select</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn">Analyze Transaction</button>
+                </form>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing transaction...</p>
+                </div>
+                
+                <div id="result"></div>
+            </div>
+
+            <div class="card">
+                <h2>📊 System Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTransactions">15,247</div>
+                        <div class="stat-label">Total Transactions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="suspiciousCount">2,287</div>
+                        <div class="stat-label">Suspicious Detected</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="accuracyRate">94.2%</div>
+                        <div class="stat-label">Detection Accuracy</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="savedAmount">$1.2M</div>
+                        <div class="stat-label">Fraud Prevented</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px; color: #333;">Recent Detections</h3>
+                <div class="transaction-list" id="recentTransactions">
+                    <!-- Recent transactions will be populated here -->
+                </div>
+                
+                <button class="btn" onclick="generateSampleData()" style="margin-top: 20px;">
+                    Generate Sample Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for demonstration
+        const sampleTransactions = [
+            {
+                id: 1,
+                amount: 8500.00,
+                merchant: "Unknown ATM",
+                time: "2:30 AM",
+                status: "suspicious",
+                probability: 0.89
+            },
+            {
+                id: 2,
+                amount: 45.99,
+                merchant: "Starbucks",
+                time: "8:15 AM",
+                status: "normal",
+                probability: 0.12
+            },
+            {
+                id: 3,
+                amount: 12000.00,
+                merchant: "Wire Transfer",
+                time: "11:45 PM",
+                status: "suspicious",
+                probability: 0.94
+            },
+            {
+                id: 4,
+                amount: 89.99,
+                merchant: "Amazon",
+                time: "3:20 PM",
+                status: "normal",
+                probability: 0.08
+            },
+            {
+                id: 5,
+                amount: 5500.00,
+                merchant: "Cash Advance",
+                time: "3:00 AM",
+                status: "suspicious",
+                probability: 0.76
+            }
+        ];
+
+        // Form submission handler
+        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            analyzeTransaction();
+        });
+
+        async function analyzeTransaction() {
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            
+            // Show loading
+            loading.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            // Get form data
+            const formData = new FormData(document.getElementById('transactionForm'));
+            const transactionData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                transactionData[key] = value;
+            }
+            
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Hide loading
+            loading.style.display = 'none';
+            
+            // Calculate risk based on transaction data
+            const riskScore = calculateRiskScore(transactionData);
+            const riskLevel = getRiskLevel(riskScore);
+            
+            displayResult(riskScore, riskLevel, transactionData);
+        }
+
+        function calculateRiskScore(data) {
+            let score = 0;
+            
+            // Amount-based risk
+            const amount = parseFloat(data.amount);
+            if (amount > 5000) score += 0.3;
+            else if (amount > 2000) score += 0.2;
+            else if (amount > 1000) score += 0.1;
+            
+            // Time-based risk
+            const hour = parseInt(data.hour_of_day);
+            if (hour >= 22 || hour <= 6) score += 0.25;
+            
+            // Weekend risk
+            if (data.is_weekend === '1') score += 0.1;
+            
+            // Balance ratio risk
+            const balanceRatio = amount / parseFloat(data.account_balance);
+            if (balanceRatio > 0.5) score += 0.2;
+            else if (balanceRatio > 0.3) score += 0.1;
+            
+            // Transaction type risk
+            if (data.transaction_type === 'ATM_WITHDRAWAL' || data.transaction_type === 'CASH_WITHDRAWAL') {
+                score += 0.15;
+            }
+            
+            // Add some randomness for demonstration
+            score += Math.random() * 0.1;
+            
+            return Math.min(score, 1); // Cap at 1.0
+        }
+
+        function getRiskLevel(score) {
+            if (score > 0.7) return 'High';
+            if (score > 0.3) return 'Medium';
+            return 'Low';
+        }
+
+        function displayResult(score, riskLevel, transactionData) {
+            const resultDiv = document.getElementById('result');
+            const riskClass = riskLevel.toLowerCase() + '-risk';
+            
+            const resultHTML = `
+                <div class="result ${riskClass}">
+                    <h3>🚨 Analysis Complete</h3>
+                    <p><strong>Risk Level:</strong> ${riskLevel}</p>
+                    <p><strong>Suspicion Probability:</strong> ${(score * 100).toFixed(1)}%</p>
+                    <p><strong>Transaction Amount:</strong> ${parseFloat(transactionData.amount).toLocaleString()}</p>
+                    <p><strong>Recommendation:</strong> ${getRecommendation(riskLevel)}</p>
+                    
+                    <div class="probability-bar">
+                        <div class="probability-fill" style="width: ${score * 100}%"></div>
+                    </div>
+                    
+                    <div style="margin-top: 15px;">
+                        <strong>Risk Factors:</strong>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            ${getRiskFactors(transactionData, score)}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = resultHTML;
+            
+            // Update statistics
+            updateStatistics();
+        }
+
+        function getRecommendation(riskLevel) {
+            switch(riskLevel) {
+                case 'High':
+                    return 'BLOCK transaction and request additional verification';
+                case 'Medium':
+                    return 'FLAG for manual review by fraud team';
+                case 'Low':
+                    return 'APPROVE transaction - appears normal';
+                default:
+                    return 'Review required';
+            }
+        }
+
+        function getRiskFactors(data, score) {
+            const factors = [];
+            const amount = parseFloat(data.amount);
+            const hour = parseInt(data.hour_of_day);
+            const balanceRatio = amount / parseFloat(data.account_balance);
+            
+            if (amount > 5000) factors.push('Large transaction amount');
+            if (hour >= 22 || hour <= 6) factors.push('Unusual transaction time');
+            if (data.is_weekend === '1') factors.push('Weekend transaction');
+            if (balanceRatio > 0.5) factors.push('High balance usage ratio');
+            if (data.transaction_type === 'ATM_WITHDRAWAL') factors.push('ATM withdrawal type');
+            
+            if (factors.length === 0) {
+                factors.push('No significant risk factors detected');
+            }
+            
+            return factors.map(factor => `<li>${factor}</li>`).join('');
+        }
+
+        function updateStatistics() {
+            // Simulate updating statistics
+            const totalEl = document.getElementById('totalTransactions');
+            const suspiciousEl = document.getElementById('suspiciousCount');
+            
+            const currentTotal = parseInt(totalEl.textContent.replace(',', ''));
+            const currentSuspicious = parseInt(suspiciousEl.textContent.replace(',', ''));
+            
+            totalEl.textContent = (currentTotal + 1).toLocaleString();
+            
+            // Randomly decide if this increases suspicious count
+            if (Math.random() > 0.7) {
+                suspiciousEl.textContent = (currentSuspicious + 1).toLocaleString();
+            }
+        }
+
+        function generateSampleData() {
+            const transactionsList = document.getElementById('recentTransactions');
+            transactionsList.innerHTML = '';
+            
+            // Shuffle and take first 5 transactions
+            const shuffled = [...sampleTransactions].sort(() => 0.5 - Math.random());
+            const recentTxns = shuffled.slice(0, 5);
+            
+            recentTxns.forEach(txn => {
+                const txnElement = document.createElement('div');
+                txnElement.className = `transaction-item ${txn.status}`;
+                txnElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${txn.amount.toLocaleString()}</strong> - ${txn.merchant}
+                            <br>
+                            <small>${txn.time} • ${(txn.probability * 100).toFixed(1)}% risk</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-weight: bold; color: ${txn.status === 'suspicious' ? '#dc3545' : '#28a745'}">
+                                ${txn.status.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                transactionsList.appendChild(txnElement);
+            });
+        }
+
+        // Auto-update statistics periodically
+        setInterval(() => {
+            const elements = document.querySelectorAll('.stat-number');
+            elements.forEach(el => {
+                if (Math.random() > 0.8) { // 20% chance to update each element
+                    const current = parseInt(el.textContent.replace(/[,%$]/g, ''));
+                    const change = Math.floor(Math.random() * 10) + 1;
+                    
+                    if (el.id === 'totalTransactions') {
+                        el.textContent = (current + change).toLocaleString();
+                    } else if (el.id === 'suspiciousCount') {
+                        el.textContent = (current + Math.floor(change / 3)).toLocaleString();
+                    } else if (el.id === 'savedAmount') {
+                        const newAmount = current + (change * 1000);
+                        el.textContent = ' + (newAmount / 1000000).toFixed(1) + 'M';
+                    }
+                }
+            });
+        }, 10000); // Update every 10 seconds
+
+        // Initialize with sample data
+        window.addEventListener('load', () => {
+            generateSampleData();
+        });
+    </script>
+</body>
+</html>
